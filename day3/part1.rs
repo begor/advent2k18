@@ -1,9 +1,10 @@
 use std::io::{self, BufRead};
+use std::collections::HashMap;
 
 
 #[derive(Debug)]
 struct Claim {
-    left_edge: i32,
+    left: i32,
     top_edge: i32,
     wide: i32,
     tall: i32
@@ -36,15 +37,29 @@ fn parse_claims_string(claims_string: &String) -> Claim {
     let v: Vec<&str> = claims_string.split(' ').collect();
     let (_, _, coordinates, dimensions) = (v[0], v[1], v[2], v[3]);
     
-    let (left_edge, top_edge) = parse_coordinates(coordinates);
+    let (left, top_edge) = parse_coordinates(coordinates);
     let (wide, tall) = parse_dimensions(dimensions);
 
-    return Claim { left_edge: left_edge, top_edge: top_edge, wide: wide, tall: tall }
+    return Claim { left: left, top_edge: top_edge, wide: wide, tall: tall }
 }
 
 
-fn find_overlaps_over_claims(claims: Vec<Claim>) {
-    println!("{:?}", claims);
+fn find_overlaps_over_claims(claims: Vec<Claim>) -> i32 {
+    let mut usage_of_claims = HashMap::new();
+
+    for claim in claims {
+        let wide = claim.wide;
+        let tall = claim.tall;
+
+        for w in claim.left.. claim.left+wide {
+            for t in claim.top_edge..claim.top_edge+tall {
+                let usage = usage_of_claims.entry((w, t)).or_insert(0);
+                *usage += 1;
+            }
+        }
+    }
+
+    return usage_of_claims.iter().filter(|&(_, count)| *count > 1).count() as i32;
 
 }
 
@@ -52,5 +67,5 @@ fn find_overlaps_over_claims(claims: Vec<Claim>) {
 fn main() {
     let claims_strings = read_claims_strings();
     let claims = claims_strings.iter().map(parse_claims_string).collect::<Vec<_>>();
-    find_overlaps_over_claims(claims);
+    println!("{:?}", find_overlaps_over_claims(claims));
 }
